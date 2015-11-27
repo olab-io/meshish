@@ -1,3 +1,26 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2015 Brannon Dorsey <brannon@brannondorsey.com>
+//               with support from the SAIC OpenLab
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #include "MeshishNode.h"
 
 MeshishNode::MeshishNode():
@@ -23,9 +46,6 @@ MeshishNode::~MeshishNode()
 
 void MeshishNode::setup(String password, bool primary)
 {
-
-//  if (primary) WiFi.mode(WIFI_AP_STA);
-//  else (WiFi.mode(WIFI_STA));
 
   WiFi.mode(WIFI_AP_STA);
   
@@ -70,14 +90,14 @@ void MeshishNode::setup(String password, bool primary)
 
 void MeshishNode::loop()
 {
-
+ 
   if (getStatus() == WL_CONNECTION_LOST)
   {
-    _serial->println("connection lost");
+    _serial->println("MeshishNode::loop: connection lost");
   }
   else if(getStatus() == WL_DISCONNECTED)
   {
-    _serial->println("disconnected");
+    _serial->println("MeshishNode::loop: disconnected");
   }
   
   if (_connectingToAP) 
@@ -99,15 +119,17 @@ void MeshishNode::loop()
         _serial->print("MeshishNode::loop: connection to \"");
         _serial->print(WiFi.SSID());
         _serial->println("\" established.");
+        _serial->print("MeshishNode::loop: recieved IP Address ");
+        _serial->println(WiFi.localIP());
       }
 
       // now create a secondary AP
       bool ssidGenerated = _generateSSID();
       if (ssidGenerated)
       {
-        WiFi.softAPConfig(IPAddress(192, 168, 4, 10),
-                          IPAddress(192, 168, 4, 10),
-                          IPAddress(255, 255, 255, 0)); 
+        // WiFi.softAPConfig(IPAddress(192, 168, 4, 10),
+        //                   IPAddress(192, 168, 4, 10),
+        //                   IPAddress(255, 255, 255, 0)); 
         WiFi.softAP(_ssid.c_str());
         _creatingAP = true;
       }
@@ -147,6 +169,7 @@ void MeshishNode::loop()
       if (_debug)
       {
         _serial->println("MeshishNode::loop: Access point created.");
+        WiFi.printDiag(*_serial);
       }
     }
     else if (status == WL_CONNECT_FAILED)
@@ -200,15 +223,15 @@ bool MeshishNode::isPrimary()
   return _isPrimary;
 }
 
-bool MeshishNode::isConnectedToPrimary()
-{
+// bool MeshishNode::isConnectedToPrimary()
+// {
 
-}
+// }
 
-bool MeshishNode::enableDefaultRoutes(bool enable)
-{
+// bool MeshishNode::enableDefaultRoutes(bool enable)
+// {
 
-}
+// }
 
 unsigned int MeshishNode::getStatus()
 {
@@ -275,12 +298,11 @@ void MeshishNode::_scanAndConnect()
     if (_debug)
     {
       _serial->print("MeshishNode::_scanAndConnect: connecting to ");
-      _serial->println(_apList[maxDBmPrimary].ssid.c_str()); 
+      _serial->println(_apList[maxDBmPrimary].ssid.c_str());
     } 
 
     if (_password.equals("")) WiFi.begin(_apList[maxDBmPrimary].ssid.c_str());
     else WiFi.begin(_apList[maxDBmPrimary].ssid.c_str(), _password.c_str());
-    // WiFi.begin("The Mainframe", "hacktheplanet");
 
     _connectingToAP = true;
   }
