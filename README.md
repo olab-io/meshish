@@ -107,6 +107,25 @@ Mesh_1_192.168.4.1_28946321
 
 Where `Mesh` is the preffix used to indicate this SSID belongs to a Meshish node, `1` indicates the node is primary (`0` if secondary), `192.168.4.1` the node's IP address, and `28946321`, the node's chip id.
 
-implied heirarchy so its only "Mesh-ish"
+Each primary node will assign itself a `192.168.x.1` IP address with a `255.255.255.0` subnet, allowing the secondary node's broadcast SSID beacons (e.g. `Mesh_0_192.168.5.13_83402919`) to notify to act as an advertisement to other nodes as to which primary node network it belongs to.
 
-## 4. Future Research
+I assumed that the ESP8266 in AP mode had the capability to route TCP/IP traffic between two clients connected in a regular fashion. For instance, given:
+
+```
+192.168.4.1 (AP)
+192.168.4.2 (AP_STA) -> 192.168.4.1 (AP)
+192.168.4.3 (AP_STA) -> 192.168.4.1 (AP)
+```
+
+One would think that `192.168.4.2` could exchange data with `192.168.4.3` because they are on the same "network" being served by the `192.168.4.1`, but with the ESP8266 this is not the case. This is where the library fails. It should be noted that the rest of the description of the Meshish library describes what is only hypothetical, as I have not found what I am about to describe to be possible given the current state of ESPRESSIF's SDK.
+
+After the initial moment of configuration, where the ESP8266 nodes have powered on and are each connected to one primary node that they are within range of (i.e. secondaries connecting to primaries, and primaries connecting to other primaries to act as gateways between networks), then the Meshish "network" behaves as follows. Any node primary or secondary, can communicate with any other node in the "network" by either making a simple connections to another node assosciated with the same primary node (i.e. `255.255.255.0` subnet) (__note: this does not actually work in practice, for reasons described above__), or making connections to the primary node itself in order to be forwarded from primary node to primary node until a connection to a secondary node on another subnet was made.
+
+Secondary node `192.168.4.10` would communicate with node `192.168.8.30` by connecting to `192.168.4.1:830` where the port number tells the primary node which secondary node on another network to connect to: 
+
+- The first digit, `8`, identifies the 3rd octet of the network the secondary node belongs to
+- The remaining digits identify the 4th octet of the secondary node.
+
+__Note:__ This rudimentary protocol limits the number of primary nodes to 9 (1-9), as the 3rd octet must be one digit only.
+
+__Note:__ Because this proposed protocol relies heavily on multiple primary nodes to facilitate (forward via proxy) the communications between primary nodes on different networks, there is an implied heirarchy that is problamatic in a mesh network. It is for this reason that I have titled this proof-of-concept mesh-like protocol "Meshish."
